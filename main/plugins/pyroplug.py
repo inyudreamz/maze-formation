@@ -137,7 +137,7 @@ async def check(userbot, client, link):
             return False, "Maybe bot is banned from the chat, or your link is invalid!"
             
 async def get_msg(userbot, client, sender, edit_id, msg_link, i, file_n):
-    logging.info("file_n is : " + file_n)
+    logger.info("file_n is : " + file_n)
     edit = ""
     chat = ""
     msg_id = int(i)
