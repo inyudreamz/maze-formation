@@ -426,14 +426,14 @@ async def ggn_new(userbot, client, sender, edit_id, msg_link, i, file_n):
                 except Exception as e:
                     logging.info(e)
                     thumb_path = None
-                if os.path.getsize(path) < (2 * 1024):
+                if os.path.getsize(path) < (2 * 1024 * 1024 * 1024):
                     caption = msg.caption if msg.caption else path
                     await send_video_with_chat_id(client, sender, path, caption, duration, hi, wi, thumb_path, upm)
                 else:
                     logging.info("In my custom code")
                     caption = msg.caption if msg.caption else os.path.basename(path)
 
-                    output_files = await split_video_by_size(path, 5, caption)
+                    output_files = await split_video_by_size(path, 1700, caption)
                     for file_path in output_files:
                         data = video_metadata(file_path)
                         duration = data["duration"]
