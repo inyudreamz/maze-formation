@@ -137,3 +137,55 @@ async def screenshot(video, duration, sender):
         return out
     else:
         None       
+
+
+#Video Splits---------------------------------------------------------------------------------------------------------------
+
+async def split_video_by_size(input_file, target_size_mb, output_prefix):
+    # Get the bitrate in bits per second using ffprobe
+    cmd_bitrate = [
+        'ffprobe', '-v', 'error', '-select_streams', 'v:0',
+        '-show_entries', 'stream=bit_rate',
+        '-of', 'default=noprint_wrappers=1:nokey=1', input_file
+    ]
+    process_bitrate = await asyncio.create_subprocess_exec(
+        *cmd_bitrate,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    stdout_bitrate, stderr_bitrate = await process_bitrate.communicate()
+    bitrate = int(stdout_bitrate.decode().strip())
+
+    # Convert bitrate from bps to Mbps
+    bitrate_mbps = bitrate / 1_000_000
+
+    # Calculate the segment duration for the target size
+    segment_duration = (target_size_mb * 8) / bitrate_mbps
+
+    # Split the video using the calculated segment duration
+    output_pattern = f'{output_prefix}%03d.mp4'
+    cmd_split = [
+        'ffmpeg', '-i', input_file, '-c', 'copy', '-map', '0',
+        '-segment_time', str(segment_duration), '-f', 'segment',
+        output_pattern, '-y'
+    ]
+    process_split = await asyncio.create_subprocess_exec(
+        *cmd_split,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    stdout_split, stderr_split = await process_split.communicate()
+
+    # Collect the actual output files with full paths
+    output_files = []
+    index = 0
+    base_path = os.path.abspath('.')
+    while True:
+        output_file = os.path.join(base_path, f"{output_prefix}{index:03d}.mp4")
+        if os.path.isfile(output_file):
+            output_files.append(output_file)
+            index += 1
+        else:
+            break
+
+    return output_files if output_files else None
